@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OP-F300 · Kontrol Paneli</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#141517;
+    --panel:#1c1d20;
+    --panel-2:#232428;
+    --border:#333238;
+    --border-soft:#2a292e;
+    --amber:#e8a33d;
+    --amber-dim:#6b4f22;
+    --amber-glow: rgba(232,163,61,0.35);
+    --ok:#5fae7d;
+    --ok-dim:#274734;
+    --warn:#c1584f;
+    --warn-dim:#4a2321;
+    --text:#ece8df;
+    --text-dim:#9a968d;
+    --text-faint:#5d5a55;
+    --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+    --body: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(232,163,61,0.06), transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--body);
+    min-height:100vh;
+    padding:28px 20px 60px;
+  }
+  .wrap{max-width:1180px;margin:0 auto;}
+
+  /* ---- Header / LED strip ---- */
+  .device-header{
+    background:linear-gradient(180deg, var(--panel-2), var(--panel));
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:20px 24px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:18px;
+    position:relative;
+    overflow:hidden;
+  }
+  .device-header::before{
+    content:"";
+    position:absolute; inset:0;
+    background:repeating-linear-gradient(90deg, rgba(255,255,255,0.015) 0 1px, transparent 1px 26px);
+    pointer-events:none;
+  }
+  .device-id{display:flex; align-items:center; gap:14px;}
+  .device-id .dot{
+    width:10px;height:10px;border-radius:50%;
+    background:var(--ok);
+    box-shadow:0 0 10px 2px var(--ok);
+    animation:pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.45;}}
+  .device-id h1{
+    font-family:var(--mono);
+    font-size:19px;
+    font-weight:700;
+    letter-spacing:0.02em;
+    margin:0;
+  }
+  .device-id .sub{font-size:12px;color:var(--text-dim);font-family:var(--mono);margin-top:2px;}
+
+  .led-array{display:flex; gap:22px; flex-wrap:wrap;}
+  .led{
+    display:flex; flex-direction:column; align-items:flex-start;
+    min-width:86px;
+    border-left:1px solid var(--border-soft);
+    padding-left:14px;
+  }
+  .led .val{
+    font-family:var(--mono); font-size:22px; font-weight:700; color:var(--amber);
+    text-shadow:0 0 14px var(--amber-glow);
+    line-height:1;
+  }
+  .led .lbl{font-size:10.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em; margin-top:6px;}
+
+  /* ---- Ingest zone ---- */
+  .ingest{
+    margin-top:18px;
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:14px;
+  }
+  @media (max-width:820px){ .ingest{grid-template-columns:1fr;} }
+
+  .slot{
+    background:var(--panel);
+    border:1px dashed var(--border);
+    border-radius:12px;
+    padding:16px;
+    transition:border-color .15s, background .15s;
+  }
+  .slot.drag{border-color:var(--amber); background:var(--panel-2);}
+  .slot h3{
+    margin:0 0 4px; font-size:13px; font-family:var(--mono); color:var(--text);
+    display:flex; align-items:center; gap:8px;
+  }
+  .slot h3 .tag{
+    font-size:9.5px; padding:2px 6px; border-radius:4px;
+    background:var(--amber-dim); color:var(--amber); letter-spacing:0.05em;
+  }
+  .slot p{margin:0 0 10px; font-size:11.5px; color:var(--text-dim); line-height:1.5;}
+  .slot .row{display:flex; gap:8px; align-items:center;}
+  .slot input[type=file]{display:none;}
+  .btn{
+    font-family:var(--body); font-size:12.5px; font-weight:600;
+    background:var(--panel-2); color:var(--text);
+    border:1px solid var(--border); border-radius:8px;
+    padding:8px 12px; cursor:pointer;
+    transition:border-color .15s, color .15s, background .15s;
+  }
+  .btn:hover{border-color:var(--amber); color:var(--amber);}
+  .btn.primary{background:var(--amber); color:#201804; border-color:var(--amber); font-weight:700;}
+  .btn.primary:hover{filter:brightness(1.08);}
+  .slot .status{font-size:11px; font-family:var(--mono); color:var(--text-faint);}
+  .slot .status.loaded{color:var(--ok);}
+
+  /* ---- Tabs ---- */
+  .tabs{
+    margin-top:26px;
+    display:flex; gap:4px;
+    border-bottom:1px solid var(--border);
+  }
+  .tab{
+    font-family:var(--mono); font-size:12.5px; letter-spacing:0.03em;
+    padding:10px 16px; color:var(--text-dim); cursor:pointer;
+    border-bottom:2px solid transparent;
+    display:flex; align-items:center; gap:8px;
+  }
+  .tab .count{
+    font-size:10px; background:var(--panel-2); color:var(--text-dim);
+    border-radius:20px; padding:1px 7px; border:1px solid var(--border-soft);
+  }
+  .tab.active{color:var(--amber); border-bottom-color:var(--amber);}
+  .tab.active .count{color:var(--amber); border-color:var(--amber-dim);}
+
+  /* ---- Toolbar ---- */
+  .toolbar{
+    display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+    margin:16px 0;
+  }
+  .toolbar input[type=text]{
+    flex:1; min-width:180px;
+    background:var(--panel); border:1px solid var(--border); border-radius:8px;
+    padding:9px 12px; color:var(--text); font-family:var(--mono); font-size:12.5px;
+  }
+  .toolbar input[type=text]::placeholder{color:var(--text-faint);}
+  .toolbar input[type=text]:focus{outline:none; border-color:var(--amber);}
+
+  /* ---- Table ---- */
+  .table-shell{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:12px;
+    overflow:hidden;
+  }
+  table{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12.5px;}
+  thead th{
+    text-align:left; padding:10px 14px; font-size:10.5px; letter-spacing:0.06em;
+    text-transform:uppercase; color:var(--text-dim); background:var(--panel-2);
+    border-bottom:1px solid var(--border); cursor:pointer; user-select:none;
+    white-space:nowrap;
+  }
+  thead th:hover{color:var(--amber);}
+  thead th .arrow{opacity:0.5; margin-left:4px;}
+  tbody td{padding:9px 14px; border-bottom:1px solid var(--border-soft); color:var(--text); white-space:nowrap;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:rgba(232,163,61,0.045);}
+  .badge{
+    display:inline-block; padding:2px 8px; border-radius:20px; font-size:10.5px;
+    font-family:var(--mono); border:1px solid var(--border-soft);
+  }
+  .badge.ok{color:var(--ok); background:var(--ok-dim); border-color:var(--ok-dim);}
+  .badge.warn{color:var(--warn); background:var(--warn-dim); border-color:var(--warn-dim);}
+  .badge.neutral{color:var(--text-dim); background:var(--panel-2);}
+
+  .empty{
+    padding:48px 20px; text-align:center; color:var(--text-faint);
+    font-family:var(--mono); font-size:12.5px; line-height:1.8;
+  }
+  .empty b{color:var(--text-dim);}
+
+  footer{
+    margin-top:26px; text-align:center; font-size:11px; color:var(--text-faint);
+    font-family:var(--mono);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="device-header">
+    <div class="device-id">
+      <span class="dot"></span>
+      <div>
+        <h1>OP-F300</h1>
+        <div class="sub">Yerel Kontrol Paneli · veriler tarayıcıdan dışarı çıkmaz</div>
+      </div>
+    </div>
+    <div class="led-array">
+      <div class="led"><span class="val" id="ledMovement">0</span><span class="lbl">Hareket</span></div>
+      <div class="led"><span class="val" id="ledUsers">0</span><span class="lbl">Kullanıcı</span></div>
+      <div class="led"><span class="val" id="ledSys">0</span><span class="lbl">Sistem Kaydı</span></div>
+      <div class="led"><span class="val" id="ledRange">—</span><span class="lbl">Tarih Aralığı</span></div>
+    </div>
+  </div>
+
+  <div class="ingest">
+    <div class="slot" id="slotAlog">
+      <h3>Hareket Kayıtları <span class="tag">ALOG_*.txt</span></h3>
+      <p>Parmak izi / kart ile yapılan giriş-çıkış hareketlerinin dışa aktarımı.</p>
+      <div class="row">
+        <label class="btn">Dosya Seç<input type="file" id="fileAlog" accept=".txt" multiple></label>
+        <button class="btn" onclick="pastePrompt('alog')">Yapıştır</button>
+        <span class="status" id="statusAlog">yüklenmedi</span>
+      </div>
+    </div>
+    <div class="slot" id="slotSlog">
+      <h3>Sistem Günlüğü <span class="tag">SLOG_*.txt</span></h3>
+      <p>Menü erişimi, kayıt/silme, yedekleme gibi yönetici işlemleri.</p>
+      <div class="row">
+        <label class="btn">Dosya Seç<input type="file" id="fileSlog" accept=".txt" multiple></label>
+        <button class="btn" onclick="pastePrompt('slog')">Yapıştır</button>
+        <span class="status" id="statusSlog">yüklenmedi</span>
+      </div>
+    </div>
+    <div class="slot" id="slotXml">
+      <h3>Kullanıcılar <span class="tag">user_*.xml</span></h3>
+      <p>Kullanıcı adı, yetki seviyesi ve kart/şifre bilgileri.</p>
+      <div class="row">
+        <label class="btn">Dosya Seç<input type="file" id="fileXml" accept=".xml" multiple></label>
+        <button class="btn" onclick="pastePrompt('xml')">Yapıştır</button>
+        <span class="status" id="statusXml">yüklenmedi</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="alog" onclick="switchTab('alog')">HAREKET KAYITLARI <span class="count" id="tabCountAlog">0</span></div>
+    <div class="tab" data-tab="slog" onclick="switchTab('slog')">SİSTEM GÜNLÜĞÜ <span class="count" id="tabCountSlog">0</span></div>
+    <div class="tab" data-tab="users" onclick="switchTab('users')">KULLANICILAR <span class="count" id="tabCountUsers">0</span></div>
+  </div>
+
+  <div class="toolbar">
+    <input type="text" id="searchBox" placeholder="Ara… (isim, ID, tarih, işlem)" oninput="render()">
+    <button class="btn" onclick="exportCsv()">CSV indir</button>
+    <button class="btn" onclick="clearAll()">Temizle</button>
+  </div>
+
+  <div class="table-shell">
+    <table id="dataTable">
+      <thead><tr id="tableHead"></tr></thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+    <div class="empty" id="emptyState">
+      Henüz veri yüklenmedi.<br>
+      <b>ALOG_001.txt</b>, <b>SLOG_001.txt</b> ya da kullanıcı <b>.xml</b> dosyalarını yukarıdan yükle veya yapıştır.
+    </div>
+  </div>
+
+  <footer>Tüm ayrıştırma tarayıcıda yapılır — hiçbir veri sunucuya gönderilmez.</footer>
+</div>
+
+<script>
+let state = { alog: [], slog: [], users: [] };
+let activeTab = 'alog';
+let sortState = { col: null, dir: 1 };
+
+const ALOG_COLS = ["No","TMNo","EnNo","Name","GMNo","Mode","In/Out","Antipass","ProxyWork","DateTime"];
+const SLOG_COLS = ["No","Manager","User","Action","Result","DateTime"];
+
+function parseTSV(text, expectedCols){
+  const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length>0);
+  if(lines.length===0) return [];
+  const header = lines[0].split('\t').map(h=>h.trim());
+  const rows = [];
+  for(let i=1;i<lines.length;i++){
+    const parts = lines[i].split('\t');
+    if(parts.length < 2) continue;
+    const row = {};
+    header.forEach((h,idx)=> row[h] = (parts[idx]||'').trim());
+    rows.push(row);
+  }
+  return rows;
+}
+
+function detectAndIngest(text, hint){
+  const firstLine = text.split(/\r?\n/)[0] || '';
+  if(hint==='xml' || text.trim().startsWith('<?xml') || text.includes('<user_info')){
+    ingestXml(text);
+  } else if(hint==='slog' || firstLine.includes('Manager')){
+    const rows = parseTSV(text, SLOG_COLS);
+    state.slog = state.slog.concat(rows);
+    setStatus('Slog', state.slog.length + ' kayıt');
+  } else {
+    const rows = parseTSV(text, ALOG_COLS);
+    state.alog = state.alog.concat(rows);
+    setStatus('Alog', state.alog.length + ' kayıt');
+  }
+  render();
+}
+
+function ingestXml(text){
+  try{
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(text, 'application/xml');
+    const nodes = doc.querySelectorAll('user_info');
+    if(nodes.length===0){
+      // tek dosyada birden fazla kok varsa da dene
+      const wrapped = parser.parseFromString('<root>'+text+'</root>', 'application/xml');
+      wrapped.querySelectorAll('user_info').forEach(n=>pushUserNode(n));
+    } else {
+      nodes.forEach(n=>pushUserNode(n));
+    }
+    setStatus('Xml', state.users.length + ' kullanıcı');
+  }catch(e){
+    alert('XML ayrıştırılamadı: '+e.message);
+  }
+}
+function pushUserNode(n){
+  const get = tag => { const el = n.querySelector(tag); return el ? el.textContent.trim() : ''; };
+  state.users.push({
+    name: get('n') || '(isimsiz)',
+    level: get('level'),
+    card: get('card'),
+    enabled: get('enabled')==='1' ? 'Evet' : 'Hayır',
+    depart_id: get('depart_id')
+  });
+}
+
+function setStatus(which, text){
+  const el = document.getElementById('status'+which);
+  el.textContent = text;
+  el.classList.add('loaded');
+}
+
+// ---- File input handlers ----
+function wireFileInput(id, hint){
+  document.getElementById(id).addEventListener('change', async (e)=>{
+    for(const f of e.target.files){
+      const text = await f.text();
+      detectAndIngest(text, hint);
+    }
+    e.target.value = '';
+  });
+}
+wireFileInput('fileAlog','alog');
+wireFileInput('fileSlog','slog');
+wireFileInput('fileXml','xml');
+
+function pastePrompt(hint){
+  const text = prompt('İçeriği buraya yapıştır:');
+  if(text && text.trim()) detectAndIngest(text, hint);
+}
+
+// ---- Drag & drop ----
+['slotAlog','slotSlog','slotXml'].forEach((id,idx)=>{
+  const hint = ['alog','slog','xml'][idx];
+  const el = document.getElementById(id);
+  el.addEventListener('dragover', e=>{e.preventDefault(); el.classList.add('drag');});
+  el.addEventListener('dragleave', ()=> el.classList.remove('drag'));
+  el.addEventListener('drop', async e=>{
+    e.preventDefault(); el.classList.remove('drag');
+    for(const f of e.dataTransfer.files){
+      const text = await f.text();
+      detectAndIngest(text, hint);
+    }
+  });
+});
+
+function switchTab(tab){
+  activeTab = tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
+  sortState = {col:null, dir:1};
+  render();
+}
+
+function getCols(){
+  if(activeTab==='alog') return ALOG_COLS;
+  if(activeTab==='slog') return SLOG_COLS;
+  return ['name','level','card','enabled','depart_id'];
+}
+function getColLabels(){
+  if(activeTab==='users') return ['Ad','Yetki','Kart','Aktif','Departman'];
+  return getCols();
+}
+function getRows(){
+  let rows = activeTab==='alog' ? state.alog : activeTab==='slog' ? state.slog : state.users;
+  const q = document.getElementById('searchBox').value.trim().toLowerCase();
+  if(q){
+    rows = rows.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(q)));
+  }
+  if(sortState.col){
+    rows = [...rows].sort((a,b)=>{
+      const av = a[sortState.col]||'', bv = b[sortState.col]||'';
+      return av.localeCompare(bv, 'tr', {numeric:true}) * sortState.dir;
+    });
+  }
+  return rows;
+}
+
+function render(){
+  const cols = getCols();
+  const labels = getColLabels();
+  const rows = getRows();
+
+  document.getElementById('tabCountAlog').textContent = state.alog.length;
+  document.getElementById('tabCountSlog').textContent = state.slog.length;
+  document.getElementById('tabCountUsers').textContent = state.users.length;
+
+  // LED sayaçlari
+  document.getElementById('ledMovement').textContent = state.alog.length;
+  document.getElementById('ledUsers').textContent = state.users.length;
+  document.getElementById('ledSys').textContent = state.slog.length;
+  const dates = state.alog.map(r=>r['DateTime']).filter(Boolean).sort();
+  document.getElementById('ledRange').textContent = dates.length ? (dates[0].slice(0,10)+' → '+dates[dates.length-1].slice(0,10)) : '—';
+
+  const head = document.getElementById('tableHead');
+  const body = document.getElementById('tableBody');
+  const emptyState = document.getElementById('emptyState');
+  const table = document.getElementById('dataTable');
+
+  if(rows.length===0){
+    table.style.display='none';
+    emptyState.style.display='block';
+    return;
+  }
+  table.style.display='table';
+  emptyState.style.display='none';
+
+  head.innerHTML = cols.map((c,i)=>{
+    const arrow = sortState.col===c ? (sortState.dir===1?'↑':'↓') : '';
+    return `<th onclick="sortBy('${c}')">${labels[i]} <span class="arrow">${arrow}</span></th>`;
+  }).join('');
+
+  body.innerHTML = rows.map(r=>{
+    return '<tr>' + cols.map(c=>{
+      let v = r[c] ?? '';
+      if(activeTab==='slog' && c==='Result'){
+        v = v==='1' ? '<span class="badge ok">başarılı</span>' : '<span class="badge warn">başarısız</span>';
+      } else if(activeTab==='users' && c==='enabled'){
+        v = v==='Evet' ? '<span class="badge ok">Evet</span>' : '<span class="badge warn">Hayır</span>';
+      } else if(v===''){
+        v = '<span class="badge neutral">—</span>';
+      }
+      return `<td>${v}</td>`;
+    }).join('') + '</tr>';
+  }).join('');
+}
+
+function sortBy(col){
+  if(sortState.col===col){ sortState.dir *= -1; }
+  else { sortState.col = col; sortState.dir = 1; }
+  render();
+}
+
+function clearAll(){
+  if(!confirm('Tüm yüklenen veriler temizlensin mi?')) return;
+  state = {alog:[], slog:[], users:[]};
+  ['Alog','Slog','Xml'].forEach(k=>{
+    const el = document.getElementById('status'+k);
+    el.textContent='yüklenmedi'; el.classList.remove('loaded');
+  });
+  render();
+}
+
+function exportCsv(){
+  const cols = getCols();
+  const labels = getColLabels();
+  const rows = getRows();
+  if(rows.length===0){ alert('Aktarılacak veri yok.'); return; }
+  let csv = labels.join(';') + '\n';
+  rows.forEach(r=>{ csv += cols.map(c=> (r[c]??'').replace(/;/g,',')).join(';') + '\n'; });
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'opf300_' + activeTab + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+render();
+</script>
+</body>
+</html>
