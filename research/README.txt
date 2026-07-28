@@ -1,0 +1,1 @@
+Eksik PDF/DLL/PCAP dosyalarını daha sonra bu klasöre ekleyebilirsin.
