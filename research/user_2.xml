@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<user_info>
+	<name>test2</name>
+	<level>user</level>
+	<card />
+	<password></password>
+	<enabled>1</enabled>
+	<depart_id>0</depart_id>
+	<timezone>
+		<tz>0</tz>
+		<tz>0</tz>
+		<tz>0</tz>
+		<tz>0</tz>
+		<tz>0</tz>
+	</timezone>
+	<UsePeriod>0</UsePeriod>
+	<Start>0</Start>
+	<End>0</End>
+	<duress />
+</user_info>
